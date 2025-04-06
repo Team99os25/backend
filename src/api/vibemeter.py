@@ -1,9 +1,40 @@
 from fastapi import APIRouter, HTTPException, status
+from datetime import datetime
 from services.supabase import supabase
-from models.schemas import VibeMeter
 from typing import List
-
+from models.schemas import VibeMeter, SessionResponse
 router = APIRouter()
+
+@router.post("/submit", response_model=SessionResponse)
+async def submit_vibe_meter(submission: VibeMeter):
+    """Submit vibe meter data and determine if intervention is needed"""
+    try:
+        vibe_entry = VibeMeter(
+            created_at=datetime.utcnow(),
+            emp_id=submission.emp_id,
+            mood=submission.mood,
+            scale=submission.scale
+        )
+        
+        await  supabase.table("vibemeter").insert(vibe_entry.dict()).execute()
+        
+        # RECONSIDER ---------------------------------------------------------------
+        
+        # Check threshold for intervention
+        # Lower scores indicate worse mood, adjust threshold as needed
+        if submission.scale <= 3:  
+            # Create a new session if intervention is needed
+            result = await conversation_service.create_session(submission.emp_id)
+            return result
+        else:
+            return {"intervention_needed": False, "message": "No intervention needed at this time."}
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing vibe meter submission: {str(e)}"
+        )
+
 
 @router.post("/", response_model=VibeMeter)
 async def create_vibe(vibe: VibeMeter):

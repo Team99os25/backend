@@ -81,11 +81,6 @@ class SessionReason(BaseModel):
     priority: int
     created_at: Optional[datetime] = None
 
-class VibeMeterSubmission(BaseModel):
-    emp_id: str
-    mood: str
-    scale: int
-
 class MessageSubmission(BaseModel):
     message: str
 
