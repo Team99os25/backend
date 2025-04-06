@@ -1,23 +1,23 @@
-[project]
-name = "emolyzer"
+[tool.poetry]
+name = "opensoft"
 version = "0.1.0"
 description = ""
-authors = [
-    {name = "Your Name",email = "you@example.com"}
-]
+authors = ["opensoft"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.10,<4.0"
-dependencies = [
-    "langchain (>=0.3.23,<0.4.0)",
-    "langchain-groq (>=0.3.2,<0.4.0)",
-    "fastapi (>=0.115.12,<0.116.0)",
-    "supabase (>=2.15.0,<3.0.0)",
-    "python-dotenv (>=1.1.0,<2.0.0)",
-    "uvicorn (>=0.34.0,<0.35.0)",
-    "passlib (>=1.7.4,<2.0.0)"
-]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+langchain = ">=0.3.23,<0.4.0"
+langchain-groq = ">=0.3.2,<0.4.0"
+fastapi = ">=0.115.12,<0.116.0"
+supabase = ">=2.15.0,<3.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
+uvicorn = ">=0.34.0,<0.35.0"
+passlib = ">=1.7.4,<2.0.0"
 
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
