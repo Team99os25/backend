@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from supabase import create_client, Client
 import os
 from dotenv import load_dotenv
-from app.api.db.base import SessionReason
+from models.schemas import SessionReason
 
 load_dotenv()
 

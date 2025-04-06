@@ -1,12 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, HTTPException, status
 from datetime import datetime
-import uuid
-from app.services.llm_service import LLMService
-from app.services.data_service import DataService
-from app.services.conversation_service import ConversationService
-from app.api.db.base import VibeMeter, Message, Session
+from services.llm_service import LLMService
+from services.data_service import DataService
+from services.conversation_service import ConversationService
+from models.schemas import VibeMeter, SessionResponse, VibeMeterSubmission, MessageResponse, MessageSubmission
 
 router = APIRouter()
 
@@ -19,28 +16,6 @@ async def get_conversations():
 llm_service = LLMService()
 data_service = DataService()
 conversation_service = ConversationService(llm_service, data_service)
-
-# Models
-class VibeMeterSubmission(BaseModel):
-    emp_id: str
-    mood: str
-    scale: int
-
-class MessageSubmission(BaseModel):
-    message: str
-
-class SessionResponse(BaseModel):
-    intervention_needed: bool
-    session_id: Optional[str] = None
-    initial_message: Optional[str] = None
-    message: Optional[str] = None
-
-class MessageResponse(BaseModel):
-    response: str
-    session_ended: bool
-    should_escalate: Optional[bool] = None
-    identified_reason: Optional[str] = None
-    confidence_level: Optional[float] = None
 
 # Routes
 @router.post("/vibemeter/submit", response_model=SessionResponse)

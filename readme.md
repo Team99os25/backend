@@ -1,6 +1,6 @@
 ## Env File
-### Add following varialbes in .env file:
-- ` APP_NAME='opensoft'`
+### Add following variabes in .env file:
+- `APP_NAME='opensoft'`
 - `SUPABASE_URL=`
 - `SUPABASE_KEY=`
 

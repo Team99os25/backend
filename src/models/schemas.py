@@ -72,3 +72,32 @@ class User(BaseModel):
         json_encoders = {
             SecretStr: lambda v: v.get_secret_value() if v else None
         }
+
+# Define a class for session reasons
+class SessionReason(BaseModel):
+    id: Optional[str] = None
+    session_id: str
+    reason: str
+    priority: int
+    created_at: Optional[datetime] = None
+
+class VibeMeterSubmission(BaseModel):
+    emp_id: str
+    mood: str
+    scale: int
+
+class MessageSubmission(BaseModel):
+    message: str
+
+class SessionResponse(BaseModel):
+    intervention_needed: bool
+    session_id: Optional[str] = None
+    initial_message: Optional[str] = None
+    message: Optional[str] = None
+
+class MessageResponse(BaseModel):
+    response: str
+    session_ended: bool
+    should_escalate: Optional[bool] = None
+    identified_reason: Optional[str] = None
+    confidence_level: Optional[float] = None

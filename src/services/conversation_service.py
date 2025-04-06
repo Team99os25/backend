@@ -1,9 +1,9 @@
-from typing import List, Dict, Optional, Any
+from typing import  Dict, Any
 from datetime import datetime
 import uuid
-from app.services.llm_service import LLMService
-from app.services.data_service import DataService
-from app.api.db.base import Session, Message, SessionReason
+from services.llm_service import LLMService
+from services.data_service import DataService
+from models.schemas import Session, Message, SessionReason
 
 class ConversationService:
     def __init__(self, llm_service: LLMService, data_service: DataService):
