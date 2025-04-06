@@ -1,3 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.log
+
+# Virtualenv
 .env
-services
-utils
+.venv
+venv/
+ENV/
+env/
+
+# Poetry
+poetry.lock
+
+# VSCode / IDEs
+.vscode/
+.idea/
+*.swp 
+
+# FastAPI static cache or uploads 
+static/
+uploads/
+
+# Ignore compiled or temp files
+*.tmp
+*.bak
+*.orig
+
+# dotenv
+.env
+.env.*
