@@ -1,3 +1,9 @@
+## Env File
+### Add following varialbes in .env file:
+- ` APP_NAME='opensoft'`
+- `SUPABASE_URL=`
+- `SUPABASE_KEY=`
+
 
 ## A. Setup Server With Poetry
 
