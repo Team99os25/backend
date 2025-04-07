@@ -6,6 +6,7 @@ from datetime import date, datetime
 from sqlalchemy import func, desc
 from jose import JWTError, jwt
 import os
+import calendar
 
 router = APIRouter()
 
@@ -15,7 +16,7 @@ ALGORITHM = "HS256"
 
 def get_escalated_list():
     result = supabase.table("sessions")\
-        .select("*")\
+        .select("*, user:emp_id(name)")\
         .eq("is_escalated", True)\
         .execute()
     return result
@@ -271,6 +272,31 @@ async def get_session_details(
             reasons=reasons,
             questions=questions
         )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/session/{session_id}/unescalate", status_code=status.HTTP_200_OK)
+async def unescalate_session(
+    session_id: str,
+    payload: dict = Depends(verify_hr_role)
+):
+    try:
+        # First check if the session exists
+        session_response = supabase.table('sessions').select('id').eq('id', session_id).execute()
+        if not session_response.data:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        # Update the session to set is_escalated to false
+        update_response = supabase.table('sessions')\
+            .update({"is_escalated": False})\
+            .eq('id', session_id)\
+            .execute()
+        
+        if not update_response.data:
+            raise HTTPException(status_code=500, detail="Failed to update session")
+        
+        return {"message": "Session un-escalated successfully", "session_id": session_id}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

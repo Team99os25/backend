@@ -40,14 +40,13 @@ async def get_user_data(employee_id: str = Depends(get_employee_id)):
             
             should_submit = days_difference >= 2
         
-            return {"should_submit": should_submit}
+            return {"should_submit": should_submit, "role": "employee"}
         else:
             escalated_list = get_escalated_list()
             current_month_daily_sessions = get_current_month_daily_sessions()
             current_month_daily_escalations = get_current_month_daily_escalations()
-            print('asd')
-            print(current_month_daily_sessions)
             return {
+                "role": "hr",
                 "escalated_list": escalated_list,
                 "current_month_daily_sessions": current_month_daily_sessions,
                 "current_month_daily_escalations": current_month_daily_escalations
