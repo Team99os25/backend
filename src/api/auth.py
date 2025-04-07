@@ -55,8 +55,7 @@ async def login(response: Response, login_data: LoginRequest):
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         secure=False,
         samesite="lax",
-        path  = "/",
-
+        path="/",
     )
     
     # Return user data
