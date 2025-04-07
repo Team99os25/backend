@@ -24,10 +24,8 @@ async def new_vibe(req: Request):
                 detail="Missing required fields: emp_id, mood, scale"
             )
 
-        # Get today's date in UTC
         today = datetime.utcnow().date().isoformat()
 
-        # Check for existing submission today
         existing = (
             supabase.table("vibemeter")
             .select("created_at")
@@ -43,7 +41,6 @@ async def new_vibe(req: Request):
                 "message": "Vibe already submitted for today."
             }
 
-        # Save new VibeMeter entry
         vibe_entry = {
             "created_at": datetime.utcnow().isoformat(),
             "emp_id": emp_id,
@@ -53,7 +50,6 @@ async def new_vibe(req: Request):
 
         supabase.table("vibemeter").insert(vibe_entry).execute()
 
-        # Fetch data for analysis
         vibe_data = (
             supabase.table("vibemeter")
             .select("*")

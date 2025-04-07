@@ -169,30 +169,15 @@ async def follow_up(req: Request, session_id: str) -> Dict[str, Any]:
 
 @router.get("/{emp_id}/{session_id}")
 async def get_conversation(emp_id: str, session_id: str) -> Dict[str, Any]:
-    """
-    Retrieve conversation history for a specific employee session
-    
-    Args:
-        emp_id: Employee ID string
-        session_id: Session ID string
-        
-    Returns:
-        Dictionary containing conversation data
-        
-    Raises:
-        HTTPException: Various error responses with appropriate status codes
-    """
     try:
         logger.info(f"Fetching conversations for emp_id: {emp_id}, session_id: {session_id}")
         
-        # Input validation
         if not all([emp_id, session_id]) or not all(isinstance(x, str) for x in [emp_id, session_id]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid input parameters"
             )
 
-        # Database query execution
         try:
             response = supabase.table("conversations") \
                 .select("*") \
@@ -206,7 +191,6 @@ async def get_conversation(emp_id: str, session_id: str) -> Dict[str, Any]:
                 detail="Service temporarily unavailable"
             )
 
-        # Check for Supabase errors (different from HTTP status codes)
         if hasattr(response, 'error') and response.error:
             logger.error(f"Supabase error: {response.error.message}")
             raise HTTPException(
@@ -214,12 +198,10 @@ async def get_conversation(emp_id: str, session_id: str) -> Dict[str, Any]:
                 detail="Database query failed"
             )
         
-        # Return empty array if no data exists
         if not response.data:
             logger.debug("No conversations found")
             return {"conversations": []}
 
-        # Data structure validation
         required_fields = {"id", "session_id", "emp_id", "created_at", "sent_by", "conversation"}
         if not all(required_fields.issubset(conv.keys()) for conv in response.data):
             logger.error("Malformed conversation data received")
