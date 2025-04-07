@@ -8,7 +8,7 @@ APP_NAME = os.getenv("APP_NAME")
 # Import routers
 from api.activity import router as activity_router
 from api.awards import router as awards_router
-from api.leave import router as leave_router
+from api.leaves import router as leave_router
 from api.performance import router as performance_router
 from api.vibemeter import router as vibemeter_router
 from api.messages import router as messages_router
@@ -30,6 +30,15 @@ app.include_router(user_router, prefix="/user", tags=["User"])
 app.include_router(conversation_router, prefix="/conversation", tags=["Conversation"])
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # your frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def root():

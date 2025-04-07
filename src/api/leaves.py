@@ -1,20 +1,20 @@
 from fastapi import APIRouter, HTTPException, status
 from services.supabase import supabase
-from models.schemas import LeaveRecord
+from models.schemas import Leaves
 from typing import List
 from datetime import date
 
 router = APIRouter()
 
-@router.post("/", response_model=LeaveRecord)
-async def create_leave(leave: LeaveRecord):
+@router.post("/", response_model=Leaves)
+async def create_leave(leave: Leaves):
     try:
         response = supabase.table("leave_records").insert(leave.dict()).execute()
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/", response_model=List[LeaveRecord])
+@router.get("/", response_model=List[Leaves])
 async def read_leaves():
     try:
         response = supabase.table("leave_records").select("*").execute()
@@ -22,7 +22,7 @@ async def read_leaves():
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/{emp_id}", response_model=List[LeaveRecord])
+@router.get("/{emp_id}", response_model=List[Leaves])
 async def read_employee_leaves(emp_id: str):
     try:
         response = supabase.table("leave_records").select("*").eq("emp_id", emp_id).execute()
@@ -30,8 +30,8 @@ async def read_employee_leaves(emp_id: str):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/{emp_id}/{leave_start_date}", response_model=LeaveRecord)
-async def update_leave(emp_id: str, leave_start_date: date, leave: LeaveRecord):
+@router.put("/{emp_id}/{leave_start_date}", response_model=Leaves)
+async def update_leave(emp_id: str, leave_start_date: date, leave: Leaves):
     try:
         response = supabase.table("leave_records").update(leave.dict()).eq("emp_id", emp_id).eq("leave_start_date", leave_start_date).execute()
         if not response.data:

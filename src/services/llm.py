@@ -1,23 +1,13 @@
+from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any
+from models.schemas import InterventionDecision, ReasonAnalysis
+
 import os
-from dotenv import load_dotenv
 
 load_dotenv()
-
-class InterventionDecision(BaseModel):
-    intervention_needed: bool = Field(description="Whether an intervention is needed based on the data")
-    confidence_score: float = Field(description="Confidence score between 0 and 1")
-    reasons: List[str] = Field(description="List of potential reasons for the employee's current emotional state")
-
-class ReasonAnalysis(BaseModel):
-    identified_reason: str = Field(description="The core reason identified from the conversation")
-    confidence_level: float = Field(description="Confidence level in the identified reason (0-1)")
-    should_escalate: bool = Field(description="Whether this issue should be escalated to HR")
-    recommendation: str = Field(description="Recommendation for addressing the issue")
 
 class LLMService:
     def __init__(self):
@@ -89,6 +79,33 @@ class LLMService:
             "employee_name": employee_name,
             "vibe_meter_data": vibe_meter_data,
             "probable_reasons": probable_reasons
+        })
+
+        return result.content
+    
+
+    async def ask_followup_question(self, employee_name: str, reason: str) -> str:
+        """Generate a gentle follow-up question based on one of the reasons"""
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", """You are Emolyzer, an empathetic AI assistant.
+            Based on a concern about the employee's emotional state, you want to explore it gently.
+            Craft a warm, supportive question to understand more about the reason.
+            Don't mention that this reason was AI-generated or directly reference 'data'.
+            Be a good listener."""),
+            ("human", """
+            Employee Name: {employee_name}
+            Concern: {reason}
+
+            Generate a supportive follow-up question to help the employee open up more about this.
+            Keep it conversational and under 3 sentences.
+            """)
+        ])
+
+        
+        chain = prompt | self.llm
+        result = await chain.ainvoke({
+            "employee_name": employee_name,
+            "reason": reason
         })
 
         return result.content

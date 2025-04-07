@@ -1,9 +1,9 @@
 from typing import  Dict, Any
 from datetime import datetime
 import uuid
-from services.llm_service import LLMService
+from services.llm import LLMService
 from services.data_service import DataService
-from models.schemas import Session, Message, SessionReason
+from models.schemas import Sessions, Message
 
 class ConversationService:
     def __init__(self, llm_service: LLMService, data_service: DataService):
@@ -40,7 +40,7 @@ class ConversationService:
         session_id = str(uuid.uuid4())
         now = datetime.utcnow()
         
-        session = Session(
+        session = Sessions(
             id=session_id,
             started_at=now,
             ended_at=None,
@@ -135,7 +135,7 @@ class ConversationService:
             )
             
             # Update session
-            session_update = Session(
+            session_update = Sessions(
                 id=session_id,
                 ended_at=datetime.utcnow(),
                 summary=summary,
