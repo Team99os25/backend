@@ -153,3 +153,8 @@ class MessageResponse(BaseModel):
     should_escalate: Optional[bool] = None
     identified_reason: Optional[str] = None
     confidence_level: Optional[float] = None
+
+class LoginRequest(BaseModel):
+    employee_id: str
+    password: str
+    role: str
