@@ -1,12 +1,13 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from api.common import get_employee_id
 from services.supabase import supabase
 from models.schemas import Sessions
 from typing import List, Optional
 
 router = APIRouter()
 
-@router.get("/{emp_id}")
-async def read_employee_sessions(emp_id: str):
+@router.get("/employee")
+async def read_employee_sessions(emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("sessions").select("*").eq("emp_id", emp_id).order("started_at", desc=True).execute()
 
@@ -19,8 +20,8 @@ async def read_employee_sessions(emp_id: str):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Failed to fetch sessions: {str(e)}")
 
 
-@router.get("/{emp_id}/{session_id}", response_model=Sessions)
-async def get_session(emp_id: str, session_id: str):
+@router.get("/employee/{session_id}", response_model=Sessions)
+async def get_session(  session_id: str , emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("sessions").select("*").eq("id", session_id).eq("emp_id", emp_id).single().execute()
 

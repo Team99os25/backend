@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from api.common import get_employee_id
 from services.supabase import supabase
 from models.schemas import Leaves
 from typing import List
@@ -22,16 +23,16 @@ async def read_leaves():
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/{emp_id}", response_model=List[Leaves])
-async def read_employee_leaves(emp_id: str):
+@router.get("/employee", response_model=List[Leaves])
+async def read_employee_leaves(emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("leave_records").select("*").eq("emp_id", emp_id).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/{emp_id}/{leave_start_date}", response_model=Leaves)
-async def update_leave(emp_id: str, leave_start_date: date, leave: Leaves):
+@router.put("/employee/{leave_start_date}", response_model=Leaves)
+async def update_leave(  leave_start_date: date, leave: Leaves, emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("leave_records").update(leave.dict()).eq("emp_id", emp_id).eq("leave_start_date", leave_start_date).execute()
         if not response.data:
@@ -40,8 +41,8 @@ async def update_leave(emp_id: str, leave_start_date: date, leave: Leaves):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.delete("/{emp_id}/{leave_start_date}")
-async def delete_leave(emp_id: str, leave_start_date: date):
+@router.delete("/employee/{leave_start_date}")
+async def delete_leave(  leave_start_date: date, emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("leave_records").delete().eq("emp_id", emp_id).eq("leave_start_date", leave_start_date).execute()
         if not response.data:

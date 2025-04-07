@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
+from api.common import get_employee_id
 from services.supabase import supabase
 from models.schemas import Awards
 from typing import List
@@ -22,16 +23,16 @@ async def read_awards():
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.get("/{emp_id}", response_model=List[Awards])
-async def read_employee_awards(emp_id: str):
+@router.get("/employee", response_model=List[Awards])
+async def read_employee_awards(emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("awards").select("*").eq("emp_id", emp_id).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.put("/{emp_id}/{award_date}", response_model=Awards)
-async def update_award(emp_id: str, award_date: date, award: Awards):
+@router.put("/employee/{award_date}", response_model=Awards)
+async def update_award(  award_date: date, award: Awards, emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("awards").update(award.dict()).eq("emp_id", emp_id).eq("award_date", award_date).execute()
         if not response.data:
@@ -40,8 +41,8 @@ async def update_award(emp_id: str, award_date: date, award: Awards):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-@router.delete("/{emp_id}/{award_date}")
-async def delete_award(emp_id: str, award_date: date):
+@router.delete("/employee/{award_date}")
+async def delete_award(award_date: date,emp_id: str = Depends(get_employee_id)):
     try:
         response = supabase.table("awards").delete().eq("emp_id", emp_id).eq("award_date", award_date).execute()
         if not response.data:

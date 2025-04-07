@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Cookie
+from fastapi import APIRouter, HTTPException, status, Depends
+from api.common import get_employee_id
 from services.supabase import supabase
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -7,7 +8,6 @@ import os
 from typing import Optional
 from services.llm import LLMService
 import uuid
-
 router = APIRouter()
 
 llm_service = LLMService()
@@ -19,30 +19,7 @@ class VibeData(BaseModel):
     mood: str
     scale: int
 
-async def get_employee_id(auth_token: str = Cookie(None)):
-    if not auth_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Not authenticated"
-        )
-    
-    try:
-        payload = jwt.decode(auth_token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(payload)
-        employee_id = payload.get("sub")
-        
-        if employee_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token"
-            )
-        
-        return employee_id
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
+
 
 @router.get("/check")
 async def check_should_submit(employee_id: str = Depends(get_employee_id)):

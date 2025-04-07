@@ -4,6 +4,7 @@ import os
 
 load_dotenv()
 APP_NAME = os.getenv("APP_NAME")
+FRONTEND_URL = os.getenv('FRONTEND_URL')
 
 # Import routers
 from api.activity import router as activity_router
@@ -35,7 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # your frontend
+    allow_origins=[FRONTEND_URL],   
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

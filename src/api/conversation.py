@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Request , status
+from fastapi import APIRouter, HTTPException, status,Request, Depends
+from api.common import get_employee_id
 from services.supabase import supabase
 from datetime import datetime
 from services.llm import LLMService
@@ -69,10 +70,9 @@ async def _update_session_status(session_id: str, status: str) -> None:
         )
     
 @router.post("/{session_id}")
-async def follow_up(req: Request, session_id: str) -> Dict[str, Any]:
+async def follow_up(req: Request, session_id: str ,emp_id: str = Depends(get_employee_id)) -> Dict[str, Any]:
     try:
         body = await req.json()
-        emp_id = body.get("emp_id")
         text = body.get("text")
         current_time = datetime.utcnow().isoformat()
 
@@ -167,8 +167,8 @@ async def follow_up(req: Request, session_id: str) -> Dict[str, Any]:
 
 
 
-@router.get("/{emp_id}/{session_id}")
-async def get_conversation(emp_id: str, session_id: str) -> Dict[str, Any]:
+@router.get("/{session_id}")
+async def get_conversation( session_id: str, emp_id: str = Depends(get_employee_id)) -> Dict[str, Any]:
     try:
         logger.info(f"Fetching conversations for emp_id: {emp_id}, session_id: {session_id}")
         
