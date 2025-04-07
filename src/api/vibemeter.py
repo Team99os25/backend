@@ -160,19 +160,29 @@ async def submit_vibe(vibe_data: VibeData, employee_id: str = Depends(get_employ
                 "started_at": datetime.utcnow().isoformat(),
                 "title": "Employee Wellbeing Intervention",
                 "status": "active",
-                "confidence_score": decision.confidence_score,
                 "initial_conversation": initial_conversation
             }
-
             session_response = supabase.table("sessions").insert(session).execute()
             session_id = session_response.data[0]["id"]
+
+            firstQ = {
+                "session_id":session_id,
+                "emp_id": employee_id,
+                "conversation": decision.interventions[0].question ,
+                "sent_by": "ai",
+                "created_at": datetime.utcnow().isoformat(),
+                }
+            
+            supabase.table("conversations").insert(firstQ).execute()
+            
 
             # Create list of dicts: [{reason, question, asked: False}, ...]
             interventions_json = [
                 {
                     "reason": intervention.reason,
                     "question": intervention.question,
-                    "asked": False
+                    "asked": False,
+                    "active" : False
                 }
                 for intervention in decision.interventions
             ]
@@ -195,7 +205,6 @@ async def submit_vibe(vibe_data: VibeData, employee_id: str = Depends(get_employ
             return {
                 "intervention_needed": False,
                 "message": "No intervention needed at this time.",
-                "confidence_score": decision.confidence_score,
                 "interventions": decision.interventions
             }
         

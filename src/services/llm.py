@@ -2,8 +2,10 @@ from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.output_parsers import PydanticOutputParser
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from models.schemas import InterventionDecision, ReasonAnalysis
+import json
+
 
 import os
 
@@ -83,32 +85,116 @@ class LLMService:
 
         return result.content
     
+    async def ask_followup_question(
+        self,
+        employee_name: str,
+        current_response: Optional[str] = None,
+        conversation_history: Optional[str] = None
+    ) -> dict:
+        """Determine whether to continue follow-up and generate appropriate response"""
+        # Build context string
+        context_parts = []
+        if current_response:
+            context_parts.append(f"Current response: {current_response}")
+        if conversation_history:
+            context_parts.append(f"Conversation history:\n{conversation_history}")
+        context = "\n\n".join(context_parts) if context_parts else "No specific context"
 
-    async def ask_followup_question(self, employee_name: str, reason: str) -> str:
-        """Generate a gentle follow-up question based on one of the reasons"""
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", """You are Emolyzer, an empathetic AI assistant.
-            Based on a concern about the employee's emotional state, you want to explore it gently.
-            Craft a warm, supportive question to understand more about the reason.
-            Don't mention that this reason was AI-generated or directly reference 'data'.
-            Be a good listener."""),
-            ("human", """
-            Employee Name: {employee_name}
-            Concern: {reason}
+        prompt_template = """You are Emolyzer, an expert at workplace conversations. Analyze this:
 
-            Generate a supportive follow-up question to help the employee open up more about this.
-            Keep it conversational and under 3 sentences.
-            """)
-        ])
+Employee: {employee_name}
+Context: {context}
 
-        
-        chain = prompt | self.llm
-        result = await chain.ainvoke({
-            "employee_name": employee_name,
-            "reason": reason
-        })
+Respond in this exact JSON format ONLY (no other text, no code formatting):
 
-        return result.content
+{{
+    "continue_followup": boolean,
+    "response": string,
+    "reason": string
+}}
+
+STRICT RULES:
+1. "continue_followup": True ONLY IF:
+   - The response was incomplete or unclear
+   - You need exactly ONE more piece of information
+   - This would be the FIRST follow-up for this topic
+   - The employee seems willing to continue
+
+2. NEVER set "continue_followup": True if:
+   - This would be the 3rd follow-up on the same topic
+   - The response was clear and complete
+   - The employee seems disengaged or brief
+
+3. "response" should be:
+   - A single, concise follow-up question when continuing
+   - A natural transition or closing statement when stopping
+
+4. "reason" must explain your decision in 5-10 words
+
+Example valid responses:
+{{ "continue_followup": true, "response": "Could you clarify what you meant by that?", "reason": "Response needs clarification" }}
+{{ "continue_followup": false, "response": "Thank you, that's helpful to know.", "reason": "Topic fully explored" }}
+{{ "continue_followup": false, "response": "Let's move to another aspect of this.", "reason": "Maximum follow-ups reached" }}"""
+
+        try:
+            prompt = ChatPromptTemplate.from_template(prompt_template)
+            chain = prompt | self.llm
+            
+            result = await chain.ainvoke({
+                "employee_name": employee_name,
+                "context": context
+            })
+
+            # Robust JSON extraction
+            json_str = result.content.strip()
+            
+            # Remove any code formatting markers
+            json_str = json_str.replace('```json', '').replace('```', '').strip()
+            
+            # Handle cases where LLM adds explanations before/after JSON
+            if '{' in json_str and '}' in json_str:
+                json_str = json_str[json_str.find('{'):json_str.rfind('}')+1]
+            
+            # Parse with validation
+            response = json.loads(json_str)
+            
+            # Validate response structure
+            if not all(key in response for key in ["continue_followup", "response", "reason"]):
+                raise ValueError("Missing required fields in LLM response")
+                
+            if not isinstance(response["continue_followup"], bool):
+                raise ValueError("continue_followup must be boolean")
+                
+            return {
+                "continue_followup": response["continue_followup"],
+                "response": str(response["response"]),
+                "reason": str(response["reason"])
+            }
+            
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM response: {json_str}. Error: {str(e)}")
+            return {
+                "continue_followup": False,
+                "response": "Let's move on to another topic.",
+                "reason": "System processing error"
+            }
+        except Exception as e:
+            print(f"LLM processing error: {str(e)}")
+            return {
+                "continue_followup": False,
+                "response": "I appreciate your input. Let's continue.",
+                "reason": "System processing error"
+            }
+
+
+
+
+
+
+
+
+
+
 
     async def generate_session_summary(self, conversation_history: List[Dict],
                                          identified_reason: str) -> str:
