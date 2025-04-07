@@ -74,7 +74,8 @@ class Sessions(BaseModel):
     summary: Optional[str] = None
     status: str
     initial_conversation: Optional[str] = None
-    confidence_score: Optional[float] = None
+    vulnerability_score: Optional[float] = None
+    is_escalated: Optional[bool] = False
     
 
 class ReasonItem(BaseModel):
@@ -161,3 +162,16 @@ class LoginRequest(BaseModel):
     employee_id: str
     password: str
     role: str
+
+class EmployeeDashboard(BaseModel):
+    emp_id: str
+    emp_name: str
+    vulnerability_score: float
+    sessions_this_month: int
+    escalations_this_year: int
+    last_session_date: Optional[datetime]
+    current_mood: str
+    latest_leave: Optional[Leaves]
+    latest_reward: Optional[Awards]
+    latest_performance: Optional[PerformanceReview]
+    latest_activity: Optional[Activity]
