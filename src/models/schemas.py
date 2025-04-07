@@ -175,3 +175,15 @@ class EmployeeDashboard(BaseModel):
     latest_reward: Optional[Awards]
     latest_performance: Optional[PerformanceReview]
     latest_activity: Optional[Activity]
+
+class EscalatedSession(BaseModel):
+    session_id: str
+    title: Optional[str]
+    summary: Optional[str]
+    date: datetime
+
+class SessionDetail(BaseModel):
+    date: datetime
+    summary: Optional[str]
+    reasons: List[str]  # List of reasons
+    questions: List[str]  # List of questions

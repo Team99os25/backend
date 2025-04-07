@@ -17,7 +17,7 @@ from api.sessions import router as sessions_router
 from api.user import router as user_router
 from api.conversation import router as conversation_router
 from api.auth import router as auth_router
-
+from api.hr import router as hr_router
 app = FastAPI(title=APP_NAME)
 
 # Register routers
@@ -31,6 +31,7 @@ app.include_router(sessions_router, prefix="/sessions", tags=["Sessions"])
 app.include_router(user_router, prefix="/user", tags=["User"])
 app.include_router(conversation_router, prefix="/conversation", tags=["Conversation"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(hr_router, prefix="/hr", tags=["Hr"])
 
 from fastapi.middleware.cors import CORSMiddleware
 

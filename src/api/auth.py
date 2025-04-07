@@ -61,7 +61,7 @@ async def login(response: Response, login_data: LoginRequest):
     return {
         "id": user["id"],
         "role": user["role"],
-        "message": "Login successful"
+        "message": "Login successful",
     }
 
 @router.post("/logout")
