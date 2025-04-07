@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from api.common import get_employee_id
+from api.hr import get_escalated_list, get_current_month_daily_sessions, get_current_month_daily_escalations
 from services.supabase import supabase
 from models.schemas import User
 from typing import List
@@ -11,63 +12,51 @@ router = APIRouter()
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-@router.post("/", response_model=User)
-async def create_user(user: User):
+@router.get("/getdata")
+async def get_user_data(employee_id: str = Depends(get_employee_id)):
     try:
-        user_dict = user.dict()
-        # Hash the password before storing
-        user_dict["password"] = pwd_context.hash(user_dict["password"])
-        # Set timestamps
-        now = datetime.utcnow()
-        user_dict["created_at"] = now
-        user_dict["updated_at"] = now
+        user_result = supabase.table("user")\
+            .select("id, role")\
+            .eq("id", employee_id)\
+            .execute()
+        if not user_result.data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            
+        if user_result.data and user_result.data[0]["role"] == "employee":
+            result = supabase.table("vibemeter")\
+                .select("created_at")\
+                .eq("emp_id", employee_id)\
+                .order("created_at", desc=True)\
+                .limit(1)\
+                .execute()
         
-        response = supabase.table("user").insert(user_dict).execute()
-        return response.data[0]
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-@router.get("/", response_model=List[User])
-async def read_users():
-    try:
-        response = supabase.table("user").select("*").execute()
-        return response.data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-@router.get("/{id}", response_model=User)
-async def read_user(id: str):
-    try:
-        response = supabase.table("user").select("*").eq("id", id).single().execute()
-        if not response.data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        return response.data
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-@router.put("/{id}", response_model=User)
-async def update_user(id: str, user: User):
-    try:
-        user_dict = user.dict(exclude_unset=True)
-        # Update timestamp
-        user_dict["updated_at"] = datetime.utcnow()
-        # Hash password if it's being updated
-        if "password" in user_dict:
-            user_dict["password"] = pwd_context.hash(user_dict["password"])
         
-        response = supabase.table("user").update(user_dict).eq("id", id).execute()
-        if not response.data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        return response.data[0]
+            should_submit = True
+        
+            last_submission = datetime.fromisoformat(result.data[0]["created_at"].replace("Z", "+00:00"))
+            today = datetime.utcnow()
+            
+            days_difference = (today - last_submission).days
+            
+            should_submit = days_difference >= 2
+        
+            return {"should_submit": should_submit}
+        else:
+            escalated_list = get_escalated_list()
+            current_month_daily_sessions = get_current_month_daily_sessions()
+            current_month_daily_escalations = get_current_month_daily_escalations()
+            print('asd')
+            print(current_month_daily_sessions)
+            return {
+                "escalated_list": escalated_list,
+                "current_month_daily_sessions": current_month_daily_sessions,
+                "current_month_daily_escalations": current_month_daily_escalations
+            }
+    
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-@router.delete("/{id}")
-async def delete_user(id: str):
-    try:
-        response = supabase.table("user").delete().eq("id", id).execute()
-        if not response.data:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        return {"message": "User deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error: {str(e)}"
+        )
+    
+    

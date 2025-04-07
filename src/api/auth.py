@@ -32,7 +32,7 @@ async def login(response: Response, login_data: LoginRequest):
     result = supabase.table("user").select("*").eq("id", login_data.employee_id).execute()
     
     if not result.data:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentialsa")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     
     user = result.data[0]
     
