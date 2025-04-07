@@ -75,7 +75,6 @@ async def follow_up(req: Request, session_id: str ,emp_id: str = Depends(get_emp
         body = await req.json()
         text = body.get("text")
         current_time = datetime.utcnow().isoformat()
-
         if not emp_id:
             raise HTTPException(
                 status_code=400,
@@ -83,6 +82,7 @@ async def follow_up(req: Request, session_id: str ,emp_id: str = Depends(get_emp
             )
         
         probable_reason = await _get_probable_reasons(emp_id, session_id)
+        print(f"Probable reasons for session {session_id}: {probable_reason}")
         reasons = probable_reason.get("reasons", [])
 
         next_reason = next((r for r in reasons if not r.get("asked")), None)
@@ -170,8 +170,7 @@ async def follow_up(req: Request, session_id: str ,emp_id: str = Depends(get_emp
 @router.get("/{session_id}")
 async def get_conversation( session_id: str, emp_id: str = Depends(get_employee_id)) -> Dict[str, Any]:
     try:
-        logger.info(f"Fetching conversations for emp_id: {emp_id}, session_id: {session_id}")
-        
+        print(f"Fetching conversations for emp_id: {emp_id}, session_id: {session_id}")
         if not all([emp_id, session_id]) or not all(isinstance(x, str) for x in [emp_id, session_id]):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -73,11 +73,11 @@ async def submit_vibe(vibe_data: VibeData, employee_id: str = Depends(get_employ
         
         intervention_required = True
         
-        if result.data:
-            for entry in result.data:
-                if entry["mood"] not in ["Angry", "Sad"]:
-                    intervention_required = False
-                    break
+        # if result.data:
+        #     for entry in result.data:
+        #         if entry["mood"] not in ["Angry", "Sad"]:
+        #             intervention_required = False
+        #             break
                 
         if not intervention_required:
             return {
@@ -122,35 +122,43 @@ async def submit_vibe(vibe_data: VibeData, employee_id: str = Depends(get_employ
             leave_data=leave_data,
             performance_data=performance_data
         )
+
         if decision.intervention_needed:
             initial_conversation = await llm_service.generate_initial_message(
                 employee_name=employee_id,
                 vibe_meter_data=vibe_data,
-                probable_reasons=decision.reasons
+                probable_reasons=[p.reason for p in decision.interventions]
             )
-             
+            
             session = {
-               "id": str(uuid.uuid4()), 
+                "id": str(uuid.uuid4()), 
                 "emp_id": employee_id,
                 "started_at": datetime.utcnow().isoformat(),
                 "title": "Employee Wellbeing Intervention",
                 "status": "active",
                 "confidence_score": decision.confidence_score,
-                "summary": ", ".join(decision.reasons),
                 "initial_conversation": initial_conversation
             }
 
             session_response = supabase.table("sessions").insert(session).execute()
             session_id = session_response.data[0]["id"]
 
-
-            reasons_json = [{"reason": r, "asked": False} for r in decision.reasons]
+            # Create list of dicts: [{reason, question, asked: False}, ...]
+            interventions_json = [
+                {
+                    "reason": intervention.reason,
+                    "question": intervention.question,
+                    "asked": False
+                }
+                for intervention in decision.interventions
+            ]
 
             supabase.table("probable_reasons").insert({
                 "session_id": session_id,
                 "emp_id": employee_id,
-                "reasons": reasons_json
+                "interventions": interventions_json
             }).execute()
+
 
             return {
                 "intervention_needed": True,
@@ -164,7 +172,7 @@ async def submit_vibe(vibe_data: VibeData, employee_id: str = Depends(get_employ
                 "intervention_needed": False,
                 "message": "No intervention needed at this time.",
                 "confidence_score": decision.confidence_score,
-                "reasons": decision.reasons
+                "interventions": decision.interventions
             }
         
     except HTTPException as http_exc:

@@ -98,12 +98,15 @@ class Conversations(BaseModel):
     conversation: Optional[str] = None
 
 
-
+class InterventionPrompt(BaseModel):
+    reason: str = Field(description="Detected reason for suggesting an intervention")
+    question: str = Field(description="Follow-up question related to the reason")
 
 class InterventionDecision(BaseModel):
     intervention_needed: bool = Field(description="Whether an intervention is needed based on the data")
     confidence_score: float = Field(description="Confidence score between 0 and 1")
-    reasons: List[str] = Field(description="List of potential reasons for the employee's current emotional state")
+    interventions: List[InterventionPrompt] = Field(description="List of reasons with associated questions")
+
 
 class ReasonAnalysis(BaseModel):
     identified_reason: str = Field(description="The core reason identified from the conversation")

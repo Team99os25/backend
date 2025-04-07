@@ -9,9 +9,8 @@ router = APIRouter()
 @router.get("/employee")
 async def read_employee_sessions(emp_id: str = Depends(get_employee_id)):
     try:
+        print(emp_id)
         response = supabase.table("sessions").select("*").eq("emp_id", emp_id).order("started_at", desc=True).execute()
-
-        # Handle case where no sessions are found
         if not response.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sessions found for this employee.")
 
