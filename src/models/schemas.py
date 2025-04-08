@@ -1,5 +1,5 @@
 from pydantic import BaseModel, SecretStr, Field
-from typing import List
+from typing import List, Any
 from typing import Optional, Literal
 from datetime import date, datetime
 
@@ -76,6 +76,7 @@ class Sessions(BaseModel):
     initial_conversation: Optional[str] = None
     vulnerability_score: Optional[float] = None
     is_escalated: Optional[bool] = False
+    identified_reason: Optional[Any] = None 
     
 
 class ReasonItem(BaseModel):

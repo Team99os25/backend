@@ -186,15 +186,167 @@ Example valid responses:
                 "reason": "System processing error"
             }
 
+    async def analyze_chats(
+        self,
+        intervention_reasons: List[str],
+        chat_history: str,
+        employee_name: str
+    ) -> dict:
+        """
+        Analyze conversation history to determine mental health status and intervention needs.
+        
+        Args:
+            intervention_reasons: List of possible intervention reasons
+            chat_history: Full conversation history as text
+            employee_name: Name of the employee being analyzed
+            
+        Returns:
+            Dictionary containing analysis results in the specified format
+        """
+        prompt_template = """
+        You are a mental health support assistant. Your job is to analyze the mental health of an employee based on conversation history of a employee, given a set of possible intervention reasons. 
+        The conversation history is aimed to know the reason behind the employee's mental health.
 
+        Input Analysis:
+        - Potential Intervention Reasons: {intervention_reasons}
+        - Full Chat History: {chat_history}
 
+        Output Requirements:
+        1. Conversation Summary: 
+        - Extract key emotional patterns
+        - Identify critical statements
+        - Note behavioral changes over time
+        - Outcome with respect to the possible intervention reasons
 
+        2. Actual Intervention Reason Determination:
+        - Match chat evidence to most relevant potential reason
+        - Rate confidence level (1-5)
+        - Cite exact phrases supporting conclusion
 
+        3. Vulnerability Scoring (1-10):
+        - 1-3: Mild concerns
+        - 4-5: Moderate risk
+        - 6-10: Immediate attention needed
+        - Consider factors: Self-harm mentions, emotional intensity, support network references
 
+        4. Escalation Required (True/False):
+        - True: If the employee's mental health is in immediate danger based on vulnerability score threshold
+        - False: If the employee's mental health is stable and there is no immediate danger
 
+        5. A title in 5-6 words
 
+        Ethical Guidelines:
+        - Never diagnose medical conditions
+        - Maintain neutral, non-judgmental tone
 
+        Output Format (JSON):
+        {{
+        "summary": "<concise paragraph>",
+        "identified_reason": {{
+            "reason": "<selected reason>",
+            "confidence": 1-5,
+            "supporting_phrases": ["exact quote1", "exact quote2"]
+        }},
+        "vulnerability_score": {{
+            "value": 1-10,
+            "rationale": "<scoring explanation>"
+        }},
+        "escalation_required": true/false
+        "title": "<5-6 word title>"
+        }}
 
+        Example Output:
+        {{
+        "summary": "The employee expressed...",
+        "identified_reason": {{
+            "reason": "Workplace burnout",
+            "confidence": 4,
+            "supporting_phrases": ["I can't keep up", "haven't slept properly in weeks"]
+        }},
+        "vulnerability_score": {{
+            "value": 7,
+            "rationale": "High score due to..."
+        }},
+        "escalation_required": true
+        "title": "Employee at Risk of Burnout"
+        }}
+        """
+
+        try:
+            prompt = ChatPromptTemplate.from_template(prompt_template)
+            chain = prompt | self.llm
+            
+            result = await chain.ainvoke({
+                "intervention_reasons": "\n".join(intervention_reasons),
+                "chat_history": chat_history,
+                "employee_name": employee_name
+            })
+
+            # Robust JSON extraction
+            json_str = result.content.strip()
+            
+            # Remove any code formatting markers
+            json_str = json_str.replace('```json', '').replace('```', '').strip()
+            
+            # Handle cases where LLM adds explanations before/after JSON
+            if '{' in json_str and '}' in json_str:
+                json_str = json_str[json_str.find('{'):json_str.rfind('}')+1]
+            
+            # Parse with validation
+            response = json.loads(json_str)
+            
+            # Validate response structure
+            required_keys = [
+                "summary",
+                "identified_reason",
+                "vulnerability_score",
+                "escalation_required"
+            ]
+            if not all(key in response for key in required_keys):
+                raise ValueError("Missing required fields in LLM response")
+                
+            # Validate nested structures
+            if not all(k in response["identified_reason"] for k in ["reason", "confidence", "supporting_phrases"]):
+                raise ValueError("Invalid identified_reason structure")
+                
+            if not all(k in response["vulnerability_score"] for k in ["value", "rationale"]):
+                raise ValueError("Invalid vulnerability_score structure")
+                
+            if not isinstance(response["escalation_required"], bool):
+                raise ValueError("escalation_required must be boolean")
+                
+            return response
+            
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse LLM response: {json_str}. Error: {str(e)}")
+            return {
+                "summary": "Analysis failed due to system error",
+                "identified_reason": {
+                    "reason": "Unknown",
+                    "confidence": 1,
+                    "supporting_phrases": []
+                },
+                "vulnerability_score": {
+                    "value": 1,
+                    "rationale": "Default score due to analysis failure"
+                },
+                "escalation_required": False
+            }
+        except Exception as e:
+            print(f"LLM processing error: {str(e)}")
+            return {
+                "summary": "Analysis failed due to system error",
+                "identified_reason": {
+                    "reason": "Unknown",
+                    "confidence": 1,
+                    "supporting_phrases": []
+                },
+                "vulnerability_score": {
+                    "value": 1,
+                    "rationale": "Default score due to analysis failure"
+                },
+                "escalation_required": False
+            }
 
     async def generate_session_summary(self, conversation_history: List[Dict],
                                          identified_reason: str) -> str:
