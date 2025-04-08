@@ -56,6 +56,7 @@ async def login(response: Response, login_data: LoginRequest):
         secure=False,
         samesite="lax",
         path="/",
+        domain=os.getenv("DOMAIN").replace("https://", "").replace("http://", ""),
     )
     
     # Return user data
