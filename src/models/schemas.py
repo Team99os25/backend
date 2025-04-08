@@ -187,3 +187,35 @@ class SessionDetail(BaseModel):
     summary: Optional[str]
     reasons: List[str]  # List of reasons
     questions: List[str]  # List of questions
+
+class SentimentDistribution(BaseModel):
+    date: date
+    distribution: dict  # Dictionary with mood as key and percentage as value
+    total_count: int
+
+class WorkHourDistribution(BaseModel):
+    year: int
+    monthly_distributions: dict  # Dictionary with month as key and work hour distribution as value
+    total_employees: int
+
+class LeaveDistribution(BaseModel):
+    year: int
+    distribution: dict  # Dictionary with leave types as key and count of employees as value
+    total_employees: int
+
+class InterventionSession(BaseModel):
+    # session_id: str
+    emp_id: str
+    emp_name: str
+    started_at: datetime
+    # title: Optional[str]
+    # summary: Optional[str]
+    vulnerability_score: Optional[float]
+    # is_escalated: bool = False
+
+class EscalatedChat(BaseModel):
+    emp_id: str
+    emp_name: str
+    vulnerability_score: float
+    last_session_date: datetime
+    last_session_id: str
