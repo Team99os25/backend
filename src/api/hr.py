@@ -664,7 +664,7 @@ async def get_escalated_chats(
                 emp_name=session["user"]["name"],
                 vulnerability_score=session["vulnerability_score"],
                 last_session_date=session["started_at"],
-                last_session_id=session["id"]
+                # last_session_id=session["id"]
             )
             for emp_id, session in employee_sessions.items()
         ]

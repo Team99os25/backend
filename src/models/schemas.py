@@ -218,4 +218,3 @@ class EscalatedChat(BaseModel):
     emp_name: str
     vulnerability_score: float
     last_session_date: datetime
-    last_session_id: str
