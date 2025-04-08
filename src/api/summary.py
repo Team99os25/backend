@@ -15,7 +15,6 @@ async def generate_summary(session_id: str, emp_id: str = Depends(get_employee_i
     try:
         print(f"Generating summary for session {session_id}, employee {emp_id}")
         
-        # 1. Fetch the conversation history
         conv_history = supabase.table("conversations") \
             .select("conversation, sent_by, created_at") \
             .eq("emp_id", emp_id) \
@@ -23,13 +22,11 @@ async def generate_summary(session_id: str, emp_id: str = Depends(get_employee_i
             .order("created_at") \
             .execute()
         
-        # Format chat history
         chat_history = "\n".join(
             f"{msg['sent_by']}: {msg['conversation']}" 
             for msg in conv_history.data
         ) if conv_history.data else "No conversation history"
 
-        # 2. Fetch the intervention reasons
         probable_reason = supabase.table("probable_reasons") \
             .select("*") \
             .eq("emp_id", emp_id) \
@@ -40,14 +37,12 @@ async def generate_summary(session_id: str, emp_id: str = Depends(get_employee_i
         interventions = probable_reason.data.get("interventions", [])
         intervention_reasons = [intervention["reason"] for intervention in interventions]
 
-        # 3. Generate analysis using LLM
         analysis = await llm_service.analyze_chats(
             intervention_reasons=intervention_reasons,
             chat_history=chat_history,
             employee_name=emp_id
         )
 
-        # 4. Prepare summary data
         summary_data = {
             "session_id": session_id,
             "employee_id": emp_id,
@@ -59,7 +54,6 @@ async def generate_summary(session_id: str, emp_id: str = Depends(get_employee_i
             "escalation_required": analysis["escalation_required"],
         }
 
-        # 5. Store the summary in database
         try:
             # Update session with summary data
             update_data = {
@@ -81,7 +75,6 @@ async def generate_summary(session_id: str, emp_id: str = Depends(get_employee_i
             
         except Exception as db_error:
             print(f"Database update failed: {str(db_error)}")
-            # Don't fail the request if storage fails, just log it
 
         print("Summary generated successfully:", summary_data)
         return summary_data
