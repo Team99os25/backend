@@ -53,8 +53,8 @@ async def login(response: Response, login_data: LoginRequest):
         value=token, 
         httponly=True, 
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         path="/",
         domain=os.getenv("DOMAIN").replace("https://", "").replace("http://", ""),
     )
