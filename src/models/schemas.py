@@ -182,6 +182,7 @@ class EscalatedSession(BaseModel):
     title: Optional[str]
     summary: Optional[str]
     date: datetime
+    reasons: List[str] = []  # Add this line
 
 class SessionDetail(BaseModel):
     date: datetime

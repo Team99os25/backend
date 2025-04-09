@@ -201,36 +201,49 @@ async def get_escalated_sessions(
     payload: dict = Depends(verify_hr_role)
 ):
     try:
-        # Get employee basic info to verify existence
         print("Getting escalated sessions for employee:", emp_id)
+
+        # Verify employee exists
         user_response = supabase.table('user').select('id').eq('id', emp_id).execute()
         if not user_response.data:
             raise HTTPException(status_code=404, detail="Employee not found")
-        
-        # Get all escalated sessions for the employee, ordered by started_at in descending order
+
+        # Get escalated sessions
         sessions_response = supabase.table('sessions').select(
             'id',
             'title',
             'summary',
             'started_at'
         ).eq('emp_id', emp_id).eq('is_escalated', True).order('started_at', desc=True).execute()
-        
+
         if not sessions_response.data:
             return []
-            
-        # Transform the data to match our schema
-        escalated_sessions = [
-            EscalatedSession(
-                session_id=session['id'],
-                title=session.get('title'),
-                summary=session.get('summary'),
-                date=session['started_at']
+
+        escalated_sessions = []
+
+        for session in sessions_response.data:
+            session_id = session['id']
+
+            # Fetch reasons for each session
+            reasons_response = supabase.table('probable_reasons').select('interventions').eq('session_id', session_id).execute()
+            reasons = []
+
+            if reasons_response.data and reasons_response.data[0].get('interventions'):
+                interventions = reasons_response.data[0]['interventions']
+                reasons = [intervention['reason'] for intervention in interventions if 'reason' in intervention]
+
+            escalated_sessions.append(
+                EscalatedSession(
+                    session_id=session_id,
+                    title=session.get('title'),
+                    summary=session.get('summary'),
+                    date=session['started_at'],
+                    reasons=reasons  # Include reasons here
+                )
             )
-            for session in sessions_response.data
-        ]
-        
+
         return escalated_sessions
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
